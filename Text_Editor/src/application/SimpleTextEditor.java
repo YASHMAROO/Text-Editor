@@ -220,7 +220,12 @@ public class SimpleTextEditor {
 	
 	private void save() {
 		try {
-			if(openFile == null) {
+			String text = textArea.getText().trim();
+			if(!text.equals("") && openFile == null) {
+				create();
+				return ;
+			}
+			if(openFile == null && text.equals("")) {
 				//Error Message
 				JOptionPane.showMessageDialog(null, "Can't Save , No file is selected", "Error", JOptionPane.ERROR_MESSAGE);
 				return ;
