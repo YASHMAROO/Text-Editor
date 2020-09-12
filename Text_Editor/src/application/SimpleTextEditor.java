@@ -2,6 +2,7 @@ package application;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Insets;
@@ -11,23 +12,33 @@ import java.io.File;
 import java.util.Formatter;
 import java.util.Scanner;
 
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
+import javax.swing.JTextPane;
 import javax.swing.UIManager;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.Element;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 
-public class SimpleTextEditor {
+public class SimpleTextEditor{
 	
 	private final String title = "Simple Text Editor";
 
 	private JFrame frame;
-	private JTextArea textArea;
+	private JTextPane textArea;
 	private File openFile;
+	private JButton bold;
+	private JButton italics;
 
 	/**
 	 * Launch the application.
@@ -59,14 +70,14 @@ public class SimpleTextEditor {
 	 * Initialize the contents of the frame.
 	 */
 	private void initialize() {
-		frame = new JFrame();
+		frame = new JFrame("seperator");
 		frame.setAutoRequestFocus(false);
 		frame.setTitle(title);
 		frame.setBounds(100, 100, 616, 444);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(new BorderLayout(0, 0));
 		
-		textArea = new JTextArea();
+		textArea = new JTextPane();
 		textArea.setBackground(Color.WHITE);
 		textArea.setForeground(Color.BLACK);
 		textArea.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -81,49 +92,27 @@ public class SimpleTextEditor {
 		menuBar.setForeground(Color.WHITE);
 		frame.getContentPane().add(menuBar, BorderLayout.NORTH);
 		
+		JPanel panel = new JPanel();
+		panel.setBackground(Color.BLACK);
+		panel.setSize(100, 100);
+		frame.getContentPane().add(panel, BorderLayout.SOUTH);
+		
+		bold = new JButton();
+		bold.setText("Bold");
+		bold.setBackground(new java.awt.Color(0, 140, 255));
+		bold.addActionListener(e -> changeStyle());
+		
+		italics = new JButton("Italics");
+		italics.setBackground(new java.awt.Color(0, 140, 255));
+		italics.addActionListener(e -> changeItalics());
+		
+		panel.add(bold);
+		panel.add(italics);
+		panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		
 		JMenu mnNewMenu = new JMenu("File");
 		menuBar.add(mnNewMenu);
 		menuBar.add(new JMenu("|")).setEnabled(false);
-		
-		JMenuItem open = new JMenuItem("Open New File");
-		open.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				open();
-			}
-		});
-		mnNewMenu.add(open);
-				
-		JMenuItem saveAs = new JMenuItem("Save As");
-		saveAs.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				create();
-			}
-		});
-		mnNewMenu.add(saveAs);
-		
-		JMenuItem save = new JMenuItem("Save");
-		save.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				save();
-			}
-		});
-		mnNewMenu.add(save);
-		
-		JMenuItem print = new JMenuItem("Print");
-		print.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				printFile();
-			}
-		});
-		mnNewMenu.add(print);
-		
-		JMenuItem close = new JMenuItem("Close");
-		close.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				close();
-			}
-		});
-		mnNewMenu.add(close);
 		
 		JMenuItem newFile = new JMenuItem("New");
 		newFile.addActionListener(new ActionListener() {
@@ -132,6 +121,51 @@ public class SimpleTextEditor {
 			}
 		});
 		mnNewMenu.add(newFile);
+		mnNewMenu.addSeparator();
+		
+		JMenuItem open = new JMenuItem("Open File");
+		open.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				open();
+			}
+		});
+		mnNewMenu.add(open);
+		mnNewMenu.addSeparator();
+				
+		JMenuItem saveAs = new JMenuItem("Save As");
+		saveAs.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				create();
+			}
+		});
+		mnNewMenu.add(saveAs);
+		mnNewMenu.addSeparator();
+		
+		JMenuItem save = new JMenuItem("Save");
+		save.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				save();
+			}
+		});
+		mnNewMenu.add(save);
+		mnNewMenu.addSeparator();
+		
+		JMenuItem print = new JMenuItem("Print");
+		print.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				printFile();
+			}
+		});
+		mnNewMenu.add(print);
+		mnNewMenu.addSeparator();
+		
+		JMenuItem close = new JMenuItem("Close");
+		close.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				close();
+			}
+		});
+		mnNewMenu.add(close);
 		
 		
 		JMenu edit = new JMenu("Edit");
@@ -145,6 +179,7 @@ public class SimpleTextEditor {
 			}
 		});
 		edit.add(cutOption);
+		edit.addSeparator();
 		
 		JMenuItem copyOption = new JMenuItem("Copy");
 		copyOption.addActionListener(new ActionListener() {
@@ -153,6 +188,7 @@ public class SimpleTextEditor {
 			}
 		});
 		edit.add(copyOption);
+		edit.addSeparator();
 		
 		JMenuItem pasteOption = new JMenuItem("Paste");
 		pasteOption.addActionListener(new ActionListener() {
@@ -207,7 +243,11 @@ public class SimpleTextEditor {
 		try {
 			JFileChooser chooser = new JFileChooser();
 			chooser.setDialogTitle("Choose location to Save");
-			chooser.showSaveDialog(null);
+			int save = chooser.showSaveDialog(null);
+			
+			if(save == JFileChooser.CANCEL_OPTION) {
+				System.exit(-1);
+			}
 			
 			openFile = chooser.getSelectedFile();
 			
@@ -297,8 +337,42 @@ public class SimpleTextEditor {
 	}
 	
 	private void exitTheFrame() {
-		frame.setVisible(false); 
+		frame.setVisible(false);
+		System.exit(-1);
 	}
 	
+	private void changeStyle() {
+		StyledDocument doc = (StyledDocument) textArea.getDocument();
+	    int selectionEnd = textArea.getSelectionEnd();
+	    int selectionStart = textArea.getSelectionStart();
+	    if (selectionStart == selectionEnd) {
+	      return;
+	    }
+	    Element element = doc.getCharacterElement(selectionStart);
+	    AttributeSet as = element.getAttributes();
+
+	    MutableAttributeSet asNew = new SimpleAttributeSet(as.copyAttributes());
+	    StyleConstants.setBold(asNew, !StyleConstants.isBold(as));
+	    doc.setCharacterAttributes(selectionStart, textArea.getSelectedText()
+	        .length(), asNew, true);
+	    String text = (StyleConstants.isBold(as) ? "Cancel Bold" : "Bold");
+	    bold.setText(text);
+	  }
+	
+	private void changeItalics() {
+		StyledDocument doc = (StyledDocument) textArea.getDocument();
+	    int selectionEnd = textArea.getSelectionEnd();
+	    int selectionStart = textArea.getSelectionStart();
+	    if (selectionStart == selectionEnd) {
+	      return;
+	    }
+	    Element element = doc.getCharacterElement(selectionStart);
+	    AttributeSet as = element.getAttributes();
+
+	    MutableAttributeSet asNew = new SimpleAttributeSet(as.copyAttributes());
+	    StyleConstants.setItalic(asNew, !StyleConstants.isItalic(as));
+	    doc.setCharacterAttributes(selectionStart, textArea.getSelectedText()
+	        .length(), asNew, true);		
+	}
 
 }
