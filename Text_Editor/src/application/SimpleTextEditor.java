@@ -12,6 +12,8 @@ import java.io.File;
 import java.util.Formatter;
 import java.util.Scanner;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -23,16 +25,25 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.UIManager;
+import javax.swing.event.UndoableEditEvent;
+import javax.swing.event.UndoableEditListener;
 import javax.swing.text.AttributeSet;
+import javax.swing.text.Document;
 import javax.swing.text.Element;
 import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
+import javax.swing.undo.UndoManager;
 
 public class SimpleTextEditor{
 	
 	private final String title = "Simple Text Editor";
+	
+	private Document editorPaneDocument;
+	private UndoManager undoManager = new UndoManager();
+	private UndoAction undoAction = new UndoAction();
+	private RedoAction redoAction = new RedoAction();
 
 	private JFrame frame;
 	private JTextPane textArea;
@@ -81,6 +92,7 @@ public class SimpleTextEditor{
 		textArea.setBackground(Color.WHITE);
 		textArea.setForeground(Color.BLACK);
 		textArea.setFont(new Font("Arial", Font.PLAIN, 14));
+		textArea.getDocument().addUndoableEditListener(new UndoListener());
 		frame.getContentPane().add(textArea, BorderLayout.NORTH);
 		
 		JScrollPane scroll = new JScrollPane(textArea);
@@ -197,6 +209,9 @@ public class SimpleTextEditor{
 			}
 		});
 		edit.add(pasteOption);
+		
+		edit.add(undoAction);
+		edit.add(redoAction);
 		
 		JMenu exit = new JMenu("Exit");
 		menuBar.add(exit);
@@ -376,3 +391,50 @@ public class SimpleTextEditor{
 	}
 
 }
+class UndoListener implements UndoableEditListener {
+    public void undoableEditHappened(UndoableEditEvent e) {
+      undoManager.addEdit(e.getEdit());
+      undoAction.update();
+      redoAction.update();
+    }
+  }
+
+  class UndoAction extends AbstractAction {
+    public UndoAction() {
+      this.putValue(Action.NAME, undoManager.getUndoPresentationName());
+      this.setEnabled(false);
+    }
+
+    public void actionPerformed(ActionEvent e) {
+      if (this.isEnabled()) {
+        undoManager.undo();
+        undoAction.update();
+        redoAction.update();
+      }
+    }
+
+    public void update() {
+      this.putValue(Action.NAME, undoManager.getUndoPresentationName());
+      this.setEnabled(undoManager.canUndo());
+    }
+  }
+
+  class RedoAction extends AbstractAction {
+    public RedoAction() {
+      this.putValue(Action.NAME, undoManager.getRedoPresentationName());
+      this.setEnabled(false);
+    }
+
+    public void actionPerformed(ActionEvent e) {
+      if (this.isEnabled()) {
+        undoManager.redo();
+        undoAction.update();
+        redoAction.update();
+      }
+    }
+
+    public void update() {
+      this.putValue(Action.NAME, undoManager.getRedoPresentationName());
+      this.setEnabled(undoManager.canRedo());
+    }
+  }
